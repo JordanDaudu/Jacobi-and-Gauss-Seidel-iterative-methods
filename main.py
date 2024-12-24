@@ -3,6 +3,31 @@
 import numpy as np
 from numpy.linalg import norm
 
+
+class ConvergenceError(Exception):
+    """Exception for handling non-convergence in iterative methods."""
+    pass
+
+
+def print_iteration_header(A, verbose=True):
+    """
+    Prints the header for the iteration table and checks .
+    """
+    n = len(A)
+
+    if is_diagonally_dominant(A) and verbose:
+        print("Matrix is diagonally dominant.")
+    if not is_diagonally_dominant(A):
+        print("Matrix is not diagonally dominant. Attempting to modify the matrix...")
+        A = make_diagonally_dominant(A)
+        if is_diagonally_dominant(A) and verbose:
+            print("Matrix modified to be diagonally dominant:\n", A)
+
+    if verbose:
+        print("Iteration" + "\t\t\t".join([" {:>12}".format(f"x{i + 1}") for i in range(n)]))
+        print("--------------------------------------------------------------------------------")
+
+
 def is_diagonally_dominant(A):
     """Check if a matrix is diagonally dominant."""
     for i in range(len(A)):
@@ -17,10 +42,10 @@ def make_diagonally_dominant(A):
     Modifies the matrix A to make it diagonally dominant by swapping rows if necessary.
 
     Parameters:
-        A (ndarray): The coefficient matrix to be modified.
+        A: The coefficient matrix to be modified.
 
     Returns:
-        ndarray: The modified matrix that is diagonally dominant (if possible).
+        The modified matrix that is diagonally dominant (if possible).
     """
     n = len(A)
 
@@ -58,17 +83,7 @@ def jacobi_iterative(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     if X0 is None:
         X0 = np.zeros_like(b, dtype=np.double)
 
-    if is_diagonally_dominant(A) and verbose:
-        print("Matrix is diagonally dominant.")
-    if not is_diagonally_dominant(A):
-        print("Matrix is not diagonally dominant. Attempting to modify the matrix...")
-        A = make_diagonally_dominant(A)
-        if is_diagonally_dominant(A) and verbose:
-            print("Matrix modified to be diagonally dominant:\n", A)
-
-    if verbose:
-        print("Iteration" + "\t\t\t".join([" {:>12}".format(f"x{i+1}") for i in range(n)]))
-        print("--------------------------------------------------------------------------------")
+    print_iteration_header(A, verbose)
 
     for k in range(1, N + 1):
         x = np.zeros(n, dtype=np.double)
@@ -81,13 +96,14 @@ def jacobi_iterative(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
 
         if norm(x - X0, np.inf) < TOL:
             if not is_diagonally_dominant(A):
-                print("Warning: Matrix is not diagonally dominant, but the solution is within tolerance and converged.")
+                print("\n|Warning: Matrix is not diagonally dominant, but the solution is within tolerance and converged.|")
             return x
 
         X0 = x.copy()
 
-    print("Maximum number of iterations exceeded")
-    return x
+    print("Maximum number of iterations exceeded, Matrix is not converging")
+    raise ConvergenceError("Jacobi method failed to converge within the maximum number of iterations.")
+
 
 
 def gauss_seidel(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
@@ -109,17 +125,7 @@ def gauss_seidel(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     if X0 is None:
         X0 = np.zeros_like(b, dtype=np.double)
 
-    if is_diagonally_dominant(A) and verbose:
-        print("Matrix is diagonally dominant.")
-    if not is_diagonally_dominant(A):
-        print("Matrix is not diagonally dominant. Attempting to modify the matrix...")
-        A = make_diagonally_dominant(A)
-        if is_diagonally_dominant(A) and verbose:
-            print("Matrix modified to be diagonally dominant:\n", A)
-
-    if verbose:
-        print("Iteration" + "\t\t\t".join([" {:>12}".format(f"x{i+1}") for i in range(n)]))
-        print("--------------------------------------------------------------------------------")
+    print_iteration_header(A, verbose)
 
     for k in range(1, N + 1):
         x = np.zeros(n, dtype=np.double)
@@ -133,18 +139,18 @@ def gauss_seidel(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
 
         if norm(x - X0, np.inf) < TOL:
             if not is_diagonally_dominant(A):
-                print("Warning: Matrix is not diagonally dominant, but the solution is within tolerance and converged.")
+                print("\n|Warning: Matrix is not diagonally dominant, but the solution is within tolerance and converged.|")
             return x
 
         X0 = x.copy()
 
-    print("Maximum number of iterations exceeded")
-    return x
+    print("Maximum number of iterations exceeded, Matrix is not converging")
+    raise ConvergenceError("Gauss_Seidel method failed to converge within the maximum number of iterations.")
 
 
 if __name__ == "__main__":
-    A = np.array([[4, 2, 0], [2, 10, 4], [0, 4, 5]])
-    b = np.array([2, 6, 5])
+    matrixA = np.array([[4, 2, 0], [2, 10, 4], [0, 4, 5]])
+    vectorB = np.array([2, 6, 5])
     while True:
         print("Please choose the method you want to use:")
         print("1. Jacobi Iterative Method")
@@ -159,8 +165,12 @@ if __name__ == "__main__":
             print("Invalid input. Please enter a number (1 or 2).")
 
     print("================================================================================")
-    if choice == 1:
-        solution = jacobi_iterative(A, b, verbose=True)
-    else:
-        solution = gauss_seidel(A, b, verbose=True)
-    print("\nApproximate solution:", solution)
+    try:
+        if choice == 1:
+            solution = jacobi_iterative(matrixA, vectorB, verbose=True)
+        else:
+            solution = gauss_seidel(matrixA, vectorB, verbose=True)
+        print("\nApproximate solution:", solution)
+    except ConvergenceError as message:
+        print("\nError:", message)
+        exit(0)
