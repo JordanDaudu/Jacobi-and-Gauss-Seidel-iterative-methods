@@ -1,17 +1,16 @@
 # Jacobi and Gauss-Seidel Iterative Methods
 
-import numpy as np
-from numpy.linalg import norm
-
-
 class ConvergenceError(Exception):
     """Exception for handling non-convergence in iterative methods."""
     pass
 
+def norm(vector):
+    """Computes the infinity norm of a vector."""
+    return max(abs(v) for v in vector)
 
 def print_iteration_header(A, verbose=True):
     """
-    Prints the header for the iteration table and checks .
+    Prints the header for the iteration table, and checks if matrix is diagonal matrix.
     """
     n = len(A)
 
@@ -27,7 +26,6 @@ def print_iteration_header(A, verbose=True):
         print("Iteration" + "\t\t\t".join([" {:>12}".format(f"x{i + 1}") for i in range(n)]))
         print("--------------------------------------------------------------------------------")
 
-
 def is_diagonally_dominant(A):
     """Check if a matrix is diagonally dominant."""
     for i in range(len(A)):
@@ -35,7 +33,6 @@ def is_diagonally_dominant(A):
         if abs(A[i][i]) < row_sum:
             return False
     return True
-
 
 def make_diagonally_dominant(A):
     """
@@ -50,43 +47,42 @@ def make_diagonally_dominant(A):
     n = len(A)
 
     for i in range(n):
-        if abs(A[i, i]) < sum(abs(A[i, j]) for j in range(n) if j != i):
+        if abs(A[i][i]) < sum(abs(A[i][j]) for j in range(n) if j != i):
             # Find a row with a larger diagonal element
             for j in range(i + 1, n):
-                if abs(A[j, i]) > abs(A[i, i]):
+                if abs(A[j][i]) > abs(A[i][i]):
                     # Swap row i and row j
-                    A[[i, j]] = A[[j, i]]
+                    A[i], A[j] = A[j], A[i]
                     break
             # After attempting to swap, if no dominant diagonal is found, print a warning
-            if abs(A[i, i]) < sum(abs(A[i, j]) for j in range(n) if j != i):
+            if abs(A[i][i]) < sum(abs(A[i][j]) for j in range(n) if j != i):
                 print(f"Warning: Row {i} still not diagonally dominant after attempting row swaps.")
 
     return A
-
 
 def jacobi_iterative(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     """
     Performs Jacobi iterations to solve Ax = b.
 
     Parameters:
-        A (ndarray): Coefficient matrix.
-        b (ndarray): Solution vector.
-        X0 (ndarray): Initial guess for the solution. Defaults to a zero vector.
-        TOL (float): Tolerance for convergence. Defaults to 1e-16.
-        N (int): Maximum number of iterations. Defaults to 200.
-        verbose (bool): If True, prints iteration details.
+        A: Coefficient matrix (list of lists).
+        b: Solution vector (list).
+        X0: Initial guess for the solution. Defaults to a zero vector.
+        TOL: Tolerance for convergence. Defaults to 1e-16.
+        N: Maximum number of iterations. Defaults to 200.
+        verbose: If True, prints iteration details.
 
     Returns:
-        ndarray: Approximate solution vector.
+        Approximate solution vector.
     """
     n = len(A)
     if X0 is None:
-        X0 = np.zeros_like(b, dtype=np.double)
+        X0 = [0.0] * n
 
     print_iteration_header(A, verbose)
 
     for k in range(1, N + 1):
-        x = np.zeros(n, dtype=np.double)
+        x = [0.0] * n
         for i in range(n):
             sigma = sum(A[i][j] * X0[j] for j in range(n) if j != i)
             x[i] = (b[i] - sigma) / A[i][i]
@@ -94,7 +90,7 @@ def jacobi_iterative(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
         if verbose:
             print(f"{k:<15}" + "\t\t".join(f"{val:<15.10f}" for val in x))
 
-        if norm(x - X0, np.inf) < TOL:
+        if norm([x[i] - X0[i] for i in range(n)]) < TOL:
             if not is_diagonally_dominant(A):
                 print("\n|Warning: Matrix is not diagonally dominant, but the solution is within tolerance and converged.|")
             return x
@@ -104,31 +100,29 @@ def jacobi_iterative(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     print("Maximum number of iterations exceeded, Matrix is not converging")
     raise ConvergenceError("Jacobi method failed to converge within the maximum number of iterations.")
 
-
-
 def gauss_seidel(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     """
     Performs Gauss-Seidel iterations to solve Ax = b.
 
     Parameters:
-        A (ndarray): Coefficient matrix.
-        b (ndarray): Solution vector.
-        X0 (ndarray): Initial guess for the solution. Defaults to a zero vector.
-        TOL (float): Tolerance for convergence. Defaults to 1e-16.
-        N (int): Maximum number of iterations. Defaults to 200.
-        verbose (bool): If True, prints iteration details.
+        A: Coefficient matrix (list of lists).
+        b: Solution vector (list).
+        X0: Initial guess for the solution. Defaults to a zero vector.
+        TOL: Tolerance for convergence. Defaults to 1e-16.
+        N: Maximum number of iterations. Defaults to 200.
+        verbose: If True, prints iteration details.
 
     Returns:
-        ndarray: Approximate solution vector.
+        Approximate solution vector.
     """
     n = len(A)
     if X0 is None:
-        X0 = np.zeros_like(b, dtype=np.double)
+        X0 = [0.0] * n
 
     print_iteration_header(A, verbose)
 
     for k in range(1, N + 1):
-        x = np.zeros(n, dtype=np.double)
+        x = X0.copy()
         for i in range(n):
             sigma1 = sum(A[i][j] * x[j] for j in range(i))
             sigma2 = sum(A[i][j] * X0[j] for j in range(i + 1, n))
@@ -137,7 +131,7 @@ def gauss_seidel(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
         if verbose:
             print(f"{k:<15}" + "\t\t".join(f"{val:<15.10f}" for val in x))
 
-        if norm(x - X0, np.inf) < TOL:
+        if norm([x[i] - X0[i] for i in range(n)]) < TOL:
             if not is_diagonally_dominant(A):
                 print("\n|Warning: Matrix is not diagonally dominant, but the solution is within tolerance and converged.|")
             return x
@@ -145,12 +139,11 @@ def gauss_seidel(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
         X0 = x.copy()
 
     print("Maximum number of iterations exceeded, Matrix is not converging")
-    raise ConvergenceError("Gauss_Seidel method failed to converge within the maximum number of iterations.")
-
+    raise ConvergenceError("Gauss-Seidel method failed to converge within the maximum number of iterations.")
 
 if __name__ == "__main__":
-    matrixA = np.array([[4, 2, 0], [2, 10, 4], [0, 4, 5]])
-    vectorB = np.array([2, 6, 5])
+    matrixA = [[4, 2, 0], [2, 10, 4], [0, 4, 5]]
+    vectorB = [2, 6, 5]
     while True:
         print("Please choose the method you want to use:")
         print("1. Jacobi Iterative Method")
