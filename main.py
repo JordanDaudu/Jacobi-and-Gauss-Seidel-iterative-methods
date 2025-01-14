@@ -10,7 +10,11 @@ def norm(vector):
 
 def print_iteration_header(A, verbose=True):
     """
-    Prints the header for the iteration table, and checks if matrix is diagonal matrix.
+    Prints the header for the iteration table and checks if the matrix is diagonally dominant.
+
+    Parameters:
+        A (list of lists): Coefficient matrix.
+        verbose (bool): If True, prints additional diagnostic information.
     """
     n = len(A)
 
@@ -27,7 +31,15 @@ def print_iteration_header(A, verbose=True):
         print("--------------------------------------------------------------------------------")
 
 def is_diagonally_dominant(A):
-    """Check if a matrix is diagonally dominant."""
+    """
+    Checks if a matrix is diagonally dominant.
+
+    Parameters:
+        A (list of lists): The matrix to check.
+
+    Returns:
+        bool: True if the matrix is diagonally dominant, False otherwise.
+    """
     for i in range(len(A)):
         row_sum = sum(abs(A[i][j]) for j in range(len(A)) if j != i)
         if abs(A[i][i]) < row_sum:
@@ -39,10 +51,10 @@ def make_diagonally_dominant(A):
     Modifies the matrix A to make it diagonally dominant by swapping rows if necessary.
 
     Parameters:
-        A: The coefficient matrix to be modified.
+        A (list of lists): The coefficient matrix to be modified.
 
     Returns:
-        The modified matrix that is diagonally dominant (if possible).
+        list of lists: The modified matrix that is diagonally dominant (if possible).
     """
     n = len(A)
 
@@ -62,18 +74,32 @@ def make_diagonally_dominant(A):
 
 def jacobi_iterative(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     """
-    Performs Jacobi iterations to solve Ax = b.
+    Performs Jacobi iterative method to solve the system of linear equations Ax = b.
+
+    This method is an iterative approach to find an approximate solution to a
+    system of linear equations. It is particularly useful for large, sparse matrices
+    and when the coefficient matrix `A` is diagonally dominant.
 
     Parameters:
-        A: Coefficient matrix (list of lists).
-        b: Solution vector (list).
-        X0: Initial guess for the solution. Defaults to a zero vector.
-        TOL: Tolerance for convergence. Defaults to 1e-16.
-        N: Maximum number of iterations. Defaults to 200.
-        verbose: If True, prints iteration details.
+        A (list of lists): Coefficient matrix of size n x n.
+        b (list): Solution vector size n.
+        X0 (list, optional): Initial guess for the solution vector. Defaults to a zero vector.
+        TOL (float, optional): Tolerance for the convergence criterion. Defaults to 0.00001.
+        N (int, optional): Maximum number of iterations allowed. Defaults to 200.
+        verbose (bool, optional): If True, prints iteration details. Defaults to True.
 
     Returns:
-        Approximate solution vector.
+        list: Approximate solution vector `x` of size n.
+
+    Raises:
+        ConvergenceError: If the method fails to converge within the maximum number of iterations.
+
+    Notes:
+        - The convergence of the Jacobi method is guaranteed if `A` is strictly
+          diagonally dominant. If the matrix is not diagonally dominant, convergence
+          is not guaranteed but may still occur in some cases.
+        - The norm of the difference between successive approximations is used
+          as the convergence criterion.
     """
     n = len(A)
     if X0 is None:
@@ -102,18 +128,33 @@ def jacobi_iterative(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
 
 def gauss_seidel(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     """
-    Performs Gauss-Seidel iterations to solve Ax = b.
+    Performs Gauss-Seidel iterations to solve the system of linear equations Ax = b.
 
     Parameters:
-        A: Coefficient matrix (list of lists).
-        b: Solution vector (list).
-        X0: Initial guess for the solution. Defaults to a zero vector.
-        TOL: Tolerance for convergence. Defaults to 1e-16.
-        N: Maximum number of iterations. Defaults to 200.
-        verbose: If True, prints iteration details.
+        A (list of lists): Coefficient matrix of size n x n.
+        b (list): Solution vector size n.
+        X0 (list, optional): Initial guess for the solution. Defaults to a zero vector.
+        TOL (float, optional): Tolerance for convergence. Defaults to 0.00001.
+        N (int, optional): Maximum number of iterations. Defaults to 200.
+        verbose (bool, optional): If True, prints iteration details. Defaults to True.
 
     Returns:
-        Approximate solution vector.
+        list: Approximate solution vector.
+
+    Raises:
+        ConvergenceError: If the method fails to converge within the maximum number of iterations.
+
+    Notes:
+        - The Gauss-Seidel method updates each component of the solution vector
+          immediately after it is computed, unlike the Jacobi method, which updates
+          all components simultaneously at the end of each iteration.
+        - The convergence of the method is guaranteed if the coefficient matrix `A` is
+          strictly diagonally dominant or symmetric positive definite.
+        - The norm of the difference between successive approximations is used
+          as the convergence criterion.
+        - If the matrix `A` is not diagonally dominant, the method may still converge
+          in some cases, but this is not guaranteed. A warning will be displayed if
+          convergence occurs despite the lack of diagonal dominance.
     """
     n = len(A)
     if X0 is None:
