@@ -8,12 +8,13 @@ def norm(vector):
     """Computes the infinity norm of a vector."""
     return max(abs(v) for v in vector)
 
-def print_iteration_header(A, verbose=True):
+def print_iteration_header(A, b, verbose=True):
     """
     Prints the header for the iteration table and checks if the matrix is diagonally dominant.
 
     Parameters:
         A (list of lists): Coefficient matrix.
+        b (list): Solution vector.
         verbose (bool): If True, prints additional diagnostic information.
     """
     n = len(A)
@@ -22,7 +23,7 @@ def print_iteration_header(A, verbose=True):
         print("Matrix is diagonally dominant.")
     if not is_diagonally_dominant(A):
         print("Matrix is not diagonally dominant. Attempting to modify the matrix...")
-        A = make_diagonally_dominant(A)
+        A, b = make_diagonally_dominant(A, b)
         if is_diagonally_dominant(A) and verbose:
             print("Matrix modified to be diagonally dominant:\n", A)
 
@@ -46,31 +47,33 @@ def is_diagonally_dominant(A):
             return False
     return True
 
-def make_diagonally_dominant(A):
+def make_diagonally_dominant(A, b):
     """
     Modifies the matrix A to make it diagonally dominant by swapping rows if necessary.
+    Also swaps vector b accordingly.
 
     Parameters:
         A (list of lists): The coefficient matrix to be modified.
+        b (list): The vector corresponding to the right-hand side of the equations.
 
     Returns:
-        list of lists: The modified matrix that is diagonally dominant (if possible).
+        tuple: The modified matrix A and the modified vector b that are diagonally dominant (if possible).
     """
     n = len(A)
-
     for i in range(n):
         if abs(A[i][i]) < sum(abs(A[i][j]) for j in range(n) if j != i):
             # Find a row with a larger diagonal element
             for j in range(i + 1, n):
                 if abs(A[j][i]) > abs(A[i][i]):
-                    # Swap row i and row j
+                    # Swap row i and row j in both matrix A and vector b
                     A[i], A[j] = A[j], A[i]
+                    b[i], b[j] = b[j], b[i]
                     break
             # After attempting to swap, if no dominant diagonal is found, print a warning
             if abs(A[i][i]) < sum(abs(A[i][j]) for j in range(n) if j != i):
                 print(f"Warning: Row {i} still not diagonally dominant after attempting row swaps.")
 
-    return A
+    return A, b
 
 def jacobi_iterative(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     """
@@ -105,7 +108,7 @@ def jacobi_iterative(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     if X0 is None:
         X0 = [0.0] * n
 
-    print_iteration_header(A, verbose)
+    print_iteration_header(A, b, verbose)
 
     for k in range(1, N + 1):
         x = [0.0] * n
@@ -160,7 +163,7 @@ def gauss_seidel(A, b, X0=None, TOL=0.00001, N=200, verbose=True):
     if X0 is None:
         X0 = [0.0] * n
 
-    print_iteration_header(A, verbose)
+    print_iteration_header(A, b, verbose)
 
     for k in range(1, N + 1):
         x = X0.copy()
